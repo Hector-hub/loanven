@@ -1,0 +1,21 @@
+<div id="container">
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <ion-card>
+    <ion-card-header >
+      <h2 style="color: green;">
+        ${{!balance.profits?0:balance.profits|number}}
+      </h2>
+      <ion-card-title>GANANCIAS</ion-card-title>
+    </ion-card-header>
+  </ion-card>
+  <ion-card>
+    <ion-card-header>
+      <h3 style="color: orange;">
+        ${{borrowed}}
+      </h3>
+      <ion-card-title>PRESTADOS</ion-card-title>
+    </ion-card-header>
+  </ion-card>
+</div>

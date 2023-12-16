@@ -1,0 +1,223 @@
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <ion-searchbar animated="true" placeholder="Buscar comprador" (ionInput)="handleInput($event)"></ion-searchbar>
+
+    <ion-list>
+
+
+      <ion-item-sliding *ngFor="let client of clients; let i=index">
+        <ion-item-options side="start">
+          <ion-item-option color="danger"  (click)="setOpenAlertDeleteClient(true,i)">Eliminar</ion-item-option>
+        </ion-item-options>
+    
+        
+      <ion-item  (click)="setClientModalOpen(true,i)" *ngIf="client.active" >
+        <ion-avatar slot="start">
+          <ion-img src="https://cdn.pixabay.com/photo/2023/02/23/19/30/bird-7809491_1280.jpg"></ion-img>
+        </ion-avatar>
+        <ion-label>
+          <h2>{{client.name}} {{client.lastName}}</h2>
+          <p>{{client.telephones[0]?client.telephones[0]:''}}</p>
+        </ion-label>
+      </ion-item>
+
+      </ion-item-sliding>
+
+
+    </ion-list>
+
+
+
+    <ion-modal [backdropDismiss]="false" [isOpen]="isClientModalOpen"   >
+      <ion-content>
+      
+      
+       
+         <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button color="primary" (click)="editClient()">Editar</ion-button>
+          </ion-buttons>
+
+           <ion-buttons slot="end">
+             <ion-button color="danger" (click)="setClientModalOpen(false,0)">Close</ion-button>
+           </ion-buttons>
+         </ion-toolbar>
+      
+
+         <ion-card>
+          <ion-card-header class="ion-text-center">
+
+            
+            <ion-card color="{{selectedClient?.loan?.isPay?'success':'warning'}}">
+              <ion-card-title >{{ selectedClient?.name }} {{ selectedClient?.lastName }}</ion-card-title>
+            <h3 *ngIf="selectedClient?.loan?.installments?.length!=null">${{ selectedClient?.loan?.amount }} | {{ selectedClient?.loan?.interestRate }}% | {{ selectedClient?.loan?.installments?.length }}s</h3>
+            <h3 *ngIf="selectedClient?.loan?.installments?.length==null">No tiene prestamo</h3>
+            </ion-card>
+         
+          </ion-card-header>
+          <ion-card-content>
+
+            <ion-grid [fixed]="true"  class="ion-text-center">
+              <ion-row>
+                <ion-col> <p><strong>Dirección</strong></p><p> {{ selectedClient?.address }}</p></ion-col>
+                <ion-col> <p><strong>Telefono(s)</strong></p><p *ngFor="let phone of selectedClient?.telephones" > {{phone}}</p></ion-col>
+            
+              </ion-row>
+              <ion-row>
+                <ion-col> <p><strong>Referencia</strong></p><p> {{ selectedClient?.reference?.nombre }} </p> <p>{{ selectedClient?.reference?.telefono }}</p></ion-col>
+            
+                 </ion-row>
+            </ion-grid>
+  
+              <ion-card class="ion-text-center" color="light"  *ngFor="let installment of selectedClient?.loan?.installments; let i =index">
+                 <ion-toggle color="success" [checked]="installment.isPay" (ionChange)="payWeek(i,installment.isPay)"><h1>Semana {{ i+1 }} - ${{getWeekAmount(selectedClient?.loan?.amount,selectedClient?.loan?.interestRate,selectedClient?.loan?.installments)|number}} </h1></ion-toggle>
+              </ion-card>
+       
+            <ion-card class="ion-text-center">
+              <ion-card-header>
+                <h1> {{ selectedClient?.guarantor?.nombre }}</h1>
+                <ion-card-title >Garante</ion-card-title>
+               
+              </ion-card-header>
+              
+              <ion-card-content>
+
+                
+            <ion-grid [fixed]="true"  class="ion-text-center">
+              <ion-row>
+                <ion-col> <p><strong>Dirección</strong></p><p>{{ selectedClient?.guarantor?.address }}</p></ion-col>
+                <ion-col> <p><strong>Trabajo</strong></p><p>{{ selectedClient?.guarantor?.workAddrees }}</p></ion-col>
+            
+              </ion-row>
+              <ion-row>
+                <ion-col> <p><strong>Telefono(s)</strong></p><p *ngFor="let phone of selectedClient?.guarantor?.telefonos">{{ phone }}</p></ion-col>
+            
+                 </ion-row>
+            </ion-grid>
+               
+              </ion-card-content>
+            </ion-card>
+          </ion-card-content>
+        </ion-card>
+     
+      
+      </ion-content>
+        
+     </ion-modal>
+
+     <ion-modal [backdropDismiss]="false" [isOpen]="addClientModalOpen" >
+      <ion-content>
+       <ion-toolbar>
+         <ion-title>Agregar Cliente</ion-title>
+        
+          <ion-buttons slot="end">
+            <ion-button color="danger" (click)="setAddClientModalOpen(false)">Close</ion-button>
+          </ion-buttons>
+       
+        </ion-toolbar>
+        <form [formGroup]="clientForm" (ngSubmit)="setOpenAlertAddClient(true)" novalidate>
+         <ion-item>
+           <h3>Datos del cliente</h3>
+         </ion-item>
+         <ion-item>
+           <ion-input type="text"  formControlName="name"   fill="solid" ngDefaultControl label="Nombre:" labelPlacement="stacked"
+             helperText=""></ion-input>
+         </ion-item>
+         <ion-item>
+           <ion-input type="text"  formControlName="lastName"   fill="solid" ngDefaultControl label="Apellido:" labelPlacement="stacked"
+           helperText=""></ion-input>
+         </ion-item>
+         <ion-item>
+           <ion-input type="text"  formControlName="address"   fill="solid" ngDefaultControl label="Dirección:" labelPlacement="stacked"
+           helperText=""></ion-input>
+         </ion-item>
+         <ion-item>
+           <ion-input type="text"  formArrayName="telephones"   fill="solid" ngDefaultControl label="Telefonos:" labelPlacement="stacked"
+           helperText=""></ion-input>
+           <ion-icon name="add" (click)="addTelephone($event)"></ion-icon>
+      
+         </ion-item>
+         <ion-item *ngFor="let control of telephones.controls; let i = index">
+   
+           <ion-label *ngIf="control.value!==''">{{control.value}}</ion-label>
+           <ion-button *ngIf="control.value!==''" color="danger"  (click)="removeTelephone(i)">Remove</ion-button>
+    
+       </ion-item>
+        
+         <div formGroupName="reference">
+           <ion-item>
+             <h3>Datos Referencia</h3>
+           </ion-item>
+         <ion-item>
+           <ion-label>Nombre:</ion-label>
+           <ion-input formControlName="nombre" type="text"  ngDefaultControl></ion-input>
+         </ion-item>
+         <ion-item>
+           <ion-label>Telefono:</ion-label>
+           <ion-input formControlName="telefono" type="text" ngDefaultControl></ion-input>
+         </ion-item>
+       </div>
+       <div formGroupName="guarantor">
+         <ion-item>
+           <h3>Garante</h3>
+         </ion-item>
+         <ion-item>
+           <ion-label>Nombre:</ion-label>
+           <ion-input formControlName="nombre" type="text" ngDefaultControl></ion-input>
+         </ion-item>
+         <ion-item>
+           <ion-label>Dirección:</ion-label>
+           <ion-input formControlName="address" type="text" ngDefaultControl></ion-input>
+         </ion-item>
+         <ion-item>
+           <ion-label>Dirección de trabajo:</ion-label>
+           <ion-input formControlName="workAddrees" type="text"ngDefaultControl ></ion-input>
+         </ion-item>
+         <ion-item>
+           <ion-label>Telefonos:</ion-label>
+           <ion-input formArrayName="telefonos" type="text" ngDefaultControl></ion-input>
+           <ion-icon name="add" (click)="addGuarantorTelephone($event)"></ion-icon>
+         </ion-item>
+         <ion-item *ngFor="let control of guarantorTelephones.controls; let i = index">
+   
+             <ion-label *ngIf="control.value!==''">{{control.value}}</ion-label>
+             <ion-button *ngIf="control.value!==''" color="danger"  (click)="removeGuarantorTelephone(i)">Remove</ion-button>
+      
+         </ion-item>
+         </div>
+         <ion-button type="submit" expand="full">Agregar</ion-button>
+       </form>
+       </ion-content>
+        </ion-modal>
+   
+
+
+        
+     <ion-fab slot="fixed" vertical="bottom" style="z-index: 10; padding-bottom: 50px;" horizontal="center">
+      <ion-fab-button (click)="setAddClientModalOpen(true)">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+
+    <ion-alert
+[isOpen]="isAddClientAlertOpen"
+header="Seguro que desea agregar este cliente?"
+[buttons]="alertButtonsToAddClient"
+(didDismiss)="setOpenAlertAddClient(false)"
+></ion-alert>
+<ion-alert
+[isOpen]="isIncompletePhones"
+header="Asegurese de que  los numero de contacto de cliente y garante han sido agregado.(obligatorios)"
+[buttons]="alertIsIncompleteButtons"
+(didDismiss)="setOpenAlertIsIncomplete(false)"
+></ion-alert>
+<ion-alert
+[isOpen]="isDeleteClientAlertOpen"
+header="Seguro que desea eliminar este cliente?"
+[buttons]="alertButtonsToDeleteClient"
+(didDismiss)="setOpenAlertDeleteClient(false)"
+></ion-alert>
+</ion-content>
